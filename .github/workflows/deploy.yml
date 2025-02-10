@@ -4,17 +4,21 @@ on:
     branches: [main]
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Specifies to run the job on the latest Ubuntu runner.
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER }}
-          script: |
-            cd /var/www/fastapi-app
-            git pull origin main
-            docker-compose down
-            docker-compose up -d --build
+    - name: Checkout repository
+      uses: actions/checkout@v4 # Checks out the repository code.
+
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.ssh_server }} # Your server IP or hostname, stored as a secret.
+        username: ${{ secrets.ssh_username }} # SSH username, stored as a secret.
+        password: ${{ secrets.ssh_password }} # SSH password, stored as a secret.
+        port: 22 # Optional. Default SSH port 22 is used unless changed.
+        script: |
+          cd /var/www/fastapi-app
+          git pull origin main
+          docker-compose down
+          docker-compose up -d --build
