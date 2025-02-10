@@ -1,62 +1,45 @@
-from typing import OrderedDict
-
+from collections import OrderedDict
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
 from api.db.schemas import Book, Genre, InMemoryDB
 
 router = APIRouter()
-
 db = InMemoryDB()
+
 db.books = {
-    1: Book(
-        id=1,
-        title="The Hobbit",
-        author="J.R.R. Tolkien",
-        publication_year=1937,
-        genre=Genre.SCI_FI,
-    ),
-    2: Book(
-        id=2,
-        title="The Lord of the Rings",
-        author="J.R.R. Tolkien",
-        publication_year=1954,
-        genre=Genre.FANTASY,
-    ),
-    3: Book(
-        id=3,
-        title="The Return of the King",
-        author="J.R.R. Tolkien",
-        publication_year=1955,
-        genre=Genre.FANTASY,
-    ),
+    1: Book(id=1, title="The Hobbit", author="J.R.R. Tolkien", publication_year=1937, genre=Genre.SCI_FI),
+    2: Book(id=2, title="The Lord of the Rings", author="J.R.R. Tolkien", publication_year=1954, genre=Genre.FANTASY),
+    3: Book(id=3, title="The Return of the King", author="J.R.R. Tolkien", publication_year=1955, genre=Genre.FANTASY),
 }
 
-
+# Create a book
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_book(book: Book):
     db.add_book(book)
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED, content=book.model_dump()
-    )
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content=book.model_dump())
 
+# Get all books (fixed: return list instead of OrderedDict)
+@router.get("/", response_model=list[Book], status_code=status.HTTP_200_OK)
+async def get_books():
+    return list(db.books.values())
 
-@router.get(
-    "/", response_model=OrderedDict[int, Book], status_code=status.HTTP_200_OK
-)
-async def get_books() -> OrderedDict[int, Book]:
-    return db.get_books()
+# Get a single book by ID
+@router.get("/{book_id}", response_model=Book, status_code=status.HTTP_200_OK)
+async def get_book(book_id: int):
+    book = db.books.get(book_id)
+    if not book:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Book not found"})
+    return book
 
-
+# Update a book
 @router.put("/{book_id}", response_model=Book, status_code=status.HTTP_200_OK)
-async def update_book(book_id: int, book: Book) -> Book:
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=db.update_book(book_id, book).model_dump(),
-    )
+async def update_book(book_id: int, book: Book):
+    updated_book = db.update_book(book_id, book)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=updated_book.model_dump())
 
-
+# Delete a book
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_book(book_id: int) -> None:
+async def delete_book(book_id: int):
     db.delete_book(book_id)
-    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
+    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT)
