@@ -18,7 +18,7 @@ jobs:
         password: ${{ secrets.ssh_password }} # SSH password, stored as a secret.
         port: 22 # Optional. Default SSH port 22 is used unless changed.
         script: |
-          cd /var/www/fastapi-app
+          cd /home/ubuntu/fastapi-app
           git pull origin main
           docker-compose down
           docker-compose up -d --build
