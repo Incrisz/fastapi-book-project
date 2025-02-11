@@ -20,5 +20,6 @@ jobs:
         script: |
           cd /home/ubuntu/fastapi-book-project
           git pull origin main
-          docker-compose down
-          docker-compose up -d --build
+          docker stop loving_villani
+          docker run -d -p 8000:8000 fastapi-app
+
