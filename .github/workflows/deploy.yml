@@ -18,11 +18,27 @@ jobs:
         password: ${{ secrets.ssh_password }} # SSH password, stored as a secret.
         port: 22 # Optional. Default SSH port 22 is used unless changed.
         script: |
-          cd /home/ubuntu/fastapi-book-project
-          git pull origin main
-          docker stop fastapi-app
-          docker rm fastapi-app
-          docker build -t fastapi-app .
-          docker run -d --name fastapi-app -p 8000:8000 fastapi-app
+           echo "Deploying to ${{ github.ref_name }}..."
+                    
+                    # Map branch to Docker container
+                    if [ "${{ github.ref_name }}" = "main" ]; then
+                      container_name="fastapi-app"
+                      branch="main"
+                    else
+                      echo "Unknown branch. Exiting."
+                      exit 1
+                    fi
+          
+                    docker exec ${container_name} /bin/bash -c "
+                        git fetch origin && \
+                        git reset --hard HEAD && \
+                        git checkout ${branch} && \
+                        git reset --hard origin/${branch} && \
+                        git pull --rebase --no-edit
+                    "
+          
+                    # Restart the Docker container
+                    docker restart ${container_name}
+
 
 
